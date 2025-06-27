@@ -1,90 +1,153 @@
-"use client"
-import { useState, useMemo } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Notify_Cards } from "@/constant/notify_data_card"
-import { Bell, Calendar, ChevronDown, ChevronUp, Clock, CreditCard, DollarSign, Filter, SlidersHorizontal, X } from "lucide-react"
-import { Bookings } from "@/constant/booking_card"
+
+"use client";
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Notify_Cards } from "@/constant/notify_data_card";
+import {
+  Bell,
+  Calendar,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  CreditCard,
+  DollarSign,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import { Bookings } from "@/constant/booking_card";
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState("notifications")
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false)
-  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState("notifications");
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
-  // Filter states
+  // Filter states - Changed to arrays for multiple selections
   const [notificationFilters, setNotificationFilters] = useState({
-    type: "all",
-    status: "all",
-  })
+    type: [] as string[],
+    status: [] as string[],
+  });
 
   const [bookingFilters, setBookingFilters] = useState({
-    status: "all",
-    service: "all",
-    time: "all",
-  })
+    status: [] as string[],
+    service: [] as string[],
+    time: [] as string[],
+  });
 
   // Calculate unread notifications count
   const unreadNotificationsCount = useMemo(() => {
-    return Notify_Cards.filter((notification) => notification.badge === true).length
-  }, [])
+    return Notify_Cards.filter((notification) => notification.badge === true)
+      .length;
+  }, []);
 
   // Calculate total notifications and bookings count
-  const totalNotificationsCount = Notify_Cards.length
-  const totalBookingsCount = Bookings.length
+  const totalNotificationsCount = Notify_Cards.length;
+  const totalBookingsCount = Bookings.length;
 
-   // Filter notifications
+  // Filter notifications - Updated for multiple selections
   const filteredNotifications = useMemo(() => {
     return Notify_Cards.filter((notification) => {
-      const typeMatch = notificationFilters.type === "all" || notification.type === notificationFilters.type
+      const typeMatch =
+        notificationFilters.type.length === 0 ||
+        notificationFilters.type.includes(notification.type);
       const statusMatch =
-        notificationFilters.status === "all" ||
-        (notificationFilters.status === "unread" && notification.badge === true) ||
-        (notificationFilters.status === "read" && (notification.badge === false || notification.badge === undefined))
-      return typeMatch && statusMatch
-    })
-  }, [notificationFilters])
+        notificationFilters.status.length === 0 ||
+        (notificationFilters.status.includes("unread") &&
+          notification.badge === true) ||
+        (notificationFilters.status.includes("read") &&
+          (notification.badge === false || notification.badge === undefined));
+      return typeMatch && statusMatch;
+    });
+  }, [notificationFilters]);
 
-  // Filter bookings
+  // Filter bookings - Updated for multiple selections
   const filteredBookings = useMemo(() => {
     return Bookings.filter((booking) => {
-      const statusMatch = bookingFilters.status === "all" || booking.status === bookingFilters.status
+      const statusMatch =
+        bookingFilters.status.length === 0 ||
+        bookingFilters.status.includes(booking.status);
       const serviceMatch =
-        bookingFilters.service === "all" || booking.service.toLowerCase().includes(bookingFilters.service.toLowerCase())
+        bookingFilters.service.length === 0 ||
+        bookingFilters.service.some((service) =>
+          booking.service.toLowerCase().includes(service.toLowerCase())
+        );
       const timeMatch =
-        bookingFilters.time === "all" ||
-        (bookingFilters.time === "morning" && booking.service.includes("AM")) ||
-        (bookingFilters.time === "afternoon" && booking.service.includes("PM") && !booking.service.includes("6:")) ||
-        (bookingFilters.time === "evening" && booking.service.includes("6:"))
-      return statusMatch && serviceMatch && timeMatch
-    })
-  }, [bookingFilters])
+        bookingFilters.time.length === 0 ||
+        (bookingFilters.time.includes("morning") &&
+          booking.service.includes("AM")) ||
+        (bookingFilters.time.includes("afternoon") &&
+          booking.service.includes("PM") &&
+          !booking.service.includes("6:")) ||
+        (bookingFilters.time.includes("evening") &&
+          booking.service.includes("6:"));
+      return statusMatch && serviceMatch && timeMatch;
+    });
+  }, [bookingFilters]);
 
   const clearNotificationFilters = () => {
-    setNotificationFilters({ type: "all", status: "all" })
-  }
+    setNotificationFilters({ type: [], status: [] });
+  };
 
   const clearBookingFilters = () => {
-    setBookingFilters({ status: "all", service: "all", time: "all" })
-  }
- 
+    setBookingFilters({ status: [], service: [], time: [] });
+  };
+
+  // Handle checkbox changes
+  const handleNotificationFilterChange = (
+    filterType: "type" | "status",
+    value: string,
+    checked: boolean
+  ) => {
+    setNotificationFilters((prev) => ({
+      ...prev,
+      [filterType]: checked
+        ? [...prev[filterType], value]
+        : prev[filterType].filter((item) => item !== value),
+    }));
+  };
+
+  const handleBookingFilterChange = (
+    filterType: "status" | "service" | "time",
+    value: string,
+    checked: boolean
+  ) => {
+    setBookingFilters((prev) => ({
+      ...prev,
+      [filterType]: checked
+        ? [...prev[filterType], value]
+        : prev[filterType].filter((item) => item !== value),
+    }));
+  };
 
   // Handle notification bell click
   const handleNotificationClick = () => {
-    setIsNotificationOpen(!isNotificationOpen)
+    setIsNotificationOpen(!isNotificationOpen);
     // Switch to notifications tab when bell is clicked
-    setActiveTab("notifications")
-  }
+    setActiveTab("notifications");
+  };
 
-// Check if any filters are active
-  const hasActiveNotificationFilters = notificationFilters.type !== "all" || notificationFilters.status !== "all"
+  // Check if any filters are active
+  const hasActiveNotificationFilters =
+    notificationFilters.type.length > 0 ||
+    notificationFilters.status.length > 0;
   const hasActiveBookingFilters =
-    bookingFilters.status !== "all" || bookingFilters.service !== "all" || bookingFilters.time !== "all"
-  const hasActiveFilters = activeTab === "notifications" ? hasActiveNotificationFilters : hasActiveBookingFilters
+    bookingFilters.status.length > 0 ||
+    bookingFilters.service.length > 0 ||
+    bookingFilters.time.length > 0;
+  const hasActiveFilters =
+    activeTab === "notifications"
+      ? hasActiveNotificationFilters
+      : hasActiveBookingFilters;
+
   return (
     <>
       <div className="flex-1 overflow-hidden">
@@ -92,7 +155,10 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold">Dashboard</h1>
 
           {/* Functional Notification Bell */}
-          <Popover open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
+          <Popover
+            open={isNotificationOpen}
+            onOpenChange={setIsNotificationOpen}
+          >
             <PopoverTrigger asChild>
               <Button
                 variant="ghost"
@@ -128,11 +194,19 @@ export default function DashboardPage() {
                         <notification.icon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 space-y-1">
-                        <p className="text-sm font-medium">{notification.title}</p>
-                        <p className="text-xs text-muted-foreground line-clamp-2">{notification.description}</p>
-                        <p className="text-xs text-muted-foreground">{notification.time}</p>
+                        <p className="text-sm font-medium">
+                          {notification.title}
+                        </p>
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {notification.description}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {notification.time}
+                        </p>
                       </div>
-                      {notification.badge && <div className="w-2 h-2 bg-blue-500 rounded-full"></div>}
+                      {notification.badge && (
+                        <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -142,8 +216,8 @@ export default function DashboardPage() {
                   variant="ghost"
                   className="w-full text-sm"
                   onClick={() => {
-                    setActiveTab("notifications")
-                    setIsNotificationOpen(false)
+                    setActiveTab("notifications");
+                    setIsNotificationOpen(false);
                   }}
                 >
                   View All Notifications
@@ -180,56 +254,81 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="space-y-4 h-full">
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
+            <Tabs
+              value={activeTab}
+              onValueChange={setActiveTab}
+              className="h-full"
+            >
               <div className="flex items-center justify-between mb-4">
                 <TabsList className="grid grid-cols-2 w-[500px] bg-gray-200">
-                  <TabsTrigger value="notifications" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="notifications"
+                    className="flex items-center gap-2"
+                  >
                     <Bell className="h-4 w-4" />
                     Notifications
-                    <Badge variant="secondary" className="ml-1 text-xs bg-red-400 text-white">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 text-xs bg-red-400 text-white"
+                    >
                       {totalNotificationsCount}
                     </Badge>
                   </TabsTrigger>
-                  <TabsTrigger value="bookings" className="flex items-center gap-2">
+                  <TabsTrigger
+                    value="bookings"
+                    className="flex items-center gap-2"
+                  >
                     <Calendar className="h-4 w-4" />
                     Today's Bookings
-                    <Badge variant="secondary" className="ml-1 text-xs  bg-red-400 text-white ">
+                    <Badge
+                      variant="secondary"
+                      className="ml-1 text-xs  bg-red-400 text-white "
+                    >
                       {totalBookingsCount}
                     </Badge>
                   </TabsTrigger>
                 </TabsList>
                 {/* Modern Filter Toggle Button */}
-               <div className="relative inline-block">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsFilterOpen(prev => !prev)}
-                  className={`relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-300 hover:shadow-md ${
-                    hasActiveFilters
-                      ? "border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 shadow-blue-100 shadow-lg"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                  } ${isFilterOpen ? "shadow-lg scale-105" : ""}`}
-                >
-                  <div className={`p-1 rounded-lg ${hasActiveFilters ? "bg-blue-100" : "bg-gray-100"}`}>
-                    <SlidersHorizontal
-                      className={`h-4 w-4 transition-colors ${hasActiveFilters ? "text-blue-600" : "text-gray-600"}`}
-                    />
-                  </div>
-                  <span className="font-medium">Filters</span>
-                  {hasActiveFilters && (
-                    <Badge className="bg-blue-500 hover:bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
-                      {activeTab === "notifications"
-                        ? Object.values(notificationFilters).filter((v) => v !== "all").length
-                        : Object.values(bookingFilters).filter((v) => v !== "all").length}
-                    </Badge>
-                  )}
-                  {isFilterOpen ? (
-                    <ChevronUp className="h-4 w-4 transition-transform" />
-                  ) : (
-                    <ChevronDown className="h-4 w-4 transition-transform" />
-                  )}
-                </Button>
+                <div className="relative inline-block">
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsFilterOpen((prev) => !prev)}
+                    className={`relative flex items-center gap-2 px-4 py-2 rounded-xl border-2 transition-all duration-300 hover:shadow-md ${
+                      hasActiveFilters
+                        ? "border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 shadow-blue-100 shadow-lg"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    } ${isFilterOpen ? "shadow-lg scale-105" : ""}`}
+                  >
+                    <div
+                      className={`p-1 rounded-lg ${
+                        hasActiveFilters ? "bg-blue-100" : "bg-gray-100"
+                      }`}
+                    >
+                      <SlidersHorizontal
+                        className={`h-4 w-4 transition-colors ${
+                          hasActiveFilters ? "text-blue-600" : "text-gray-600"
+                        }`}
+                      />
+                    </div>
+                    <span className="font-medium">Filters</span>
+                    {hasActiveFilters && (
+                      <Badge className="bg-blue-500 hover:bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full animate-pulse">
+                        {activeTab === "notifications"
+                          ? notificationFilters.type.length +
+                            notificationFilters.status.length
+                          : bookingFilters.status.length +
+                            bookingFilters.service.length +
+                            bookingFilters.time.length}
+                      </Badge>
+                    )}
+                    {isFilterOpen ? (
+                      <ChevronUp className="h-4 w-4 transition-transform" />
+                    ) : (
+                      <ChevronDown className="h-4 w-4 transition-transform" />
+                    )}
+                  </Button>
+                </div>
               </div>
-</div>
               {/* Fixed Position Filter Panel */}
               {isFilterOpen && (
                 <div className="absolute right-0 mt-10 z-50 w-80">
@@ -240,7 +339,10 @@ export default function DashboardPage() {
                           <SlidersHorizontal className="h-4 w-4 text-blue-600" />
                         </div>
                         <span className="text-sm font-medium text-gray-700">
-                          Filter {activeTab === "notifications" ? "Notifications" : "Bookings"}
+                          Filter{" "}
+                          {activeTab === "notifications"
+                            ? "Notifications"
+                            : "Bookings"}
                         </span>
                       </div>
                       <Button
@@ -252,29 +354,58 @@ export default function DashboardPage() {
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {activeTab === "notifications" ? (
                         <>
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-600">Notification Type</label>
-                            <Select
-                              value={notificationFilters.type}
-                              onValueChange={(value) => setNotificationFilters((prev) => ({ ...prev, type: value }))}
-                            >
-                              <SelectTrigger className="w-full h-9 text-sm">
-                                <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="booking-cancel">Booking Cancel</SelectItem>
-                                <SelectItem value="new-booking">New Booking</SelectItem>
-                                <SelectItem value="payment">Payment</SelectItem>
-                                <SelectItem value="new-customer">New Customer</SelectItem>
-                                <SelectItem value="system-update">System Update</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <div className="space-y-3">
+                            <label className="text-xs font-medium text-gray-600">
+                              Notification Type
+                            </label>
+                            <div className="space-y-2">
+                              {[
+                                {
+                                  value: "booking-cancel",
+                                  label: "Booking Cancel",
+                                },
+                                { value: "new-booking", label: "New Booking" },
+                                { value: "payment", label: "Payment" },
+                                {
+                                  value: "new-customer",
+                                  label: "New Customer",
+                                },
+                                {
+                                  value: "system-update",
+                                  label: "System Update",
+                                },
+                              ].map((option) => (
+                                <div
+                                  key={option.value}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`type-${option.value}`}
+                                    checked={notificationFilters.type.includes(
+                                      option.value
+                                    )}
+                                    onCheckedChange={(checked) =>
+                                      handleNotificationFilterChange(
+                                        "type",
+                                        option.value,
+                                        checked as boolean
+                                      )
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`type-${option.value}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {option.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                          
+
                           <Button
                             variant="outline"
                             onClick={clearNotificationFilters}
@@ -286,59 +417,87 @@ export default function DashboardPage() {
                         </>
                       ) : (
                         <>
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-600">Booking Status</label>
-                            <Select
-                              value={bookingFilters.status}
-                              onValueChange={(value) => setBookingFilters((prev) => ({ ...prev, status: value }))}
-                            >
-                              <SelectTrigger className="w-full h-9 text-sm">
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Status</SelectItem>
-                                <SelectItem value="Confirmed">Confirmed</SelectItem>
-                                <SelectItem value="Pending">Pending</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <div className="space-y-3">
+                            <label className="text-xs font-medium text-gray-600">
+                              Booking Status
+                            </label>
+                            <div className="space-y-2">
+                              {[
+                                { value: "Confirmed", label: "Confirmed" },
+                                { value: "Pending", label: "Pending" },
+                              ].map((option) => (
+                                <div
+                                  key={option.value}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`booking-status-${option.value}`}
+                                    checked={bookingFilters.status.includes(
+                                      option.value
+                                    )}
+                                    onCheckedChange={(checked) =>
+                                      handleBookingFilterChange(
+                                        "status",
+                                        option.value,
+                                        checked as boolean
+                                      )
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`booking-status-${option.value}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {option.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
                           </div>
 
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-600">Service Type</label>
-                            <Select
-                              value={bookingFilters.service}
-                              onValueChange={(value) => setBookingFilters((prev) => ({ ...prev, service: value }))}
-                            >
-                              <SelectTrigger className="w-full h-9 text-sm">
-                                <SelectValue placeholder="Select service" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Services</SelectItem>
-                                <SelectItem value="hair cut">Hair Cut</SelectItem>
-                                <SelectItem value="beard trim">Beard Trim</SelectItem>
-                                <SelectItem value="full service">Full Service</SelectItem>
-                                <SelectItem value="hair wash">Hair Wash</SelectItem>
-                                <SelectItem value="color treatment">Color Treatment</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-
-                          <div className="space-y-2">
-                            <label className="text-xs font-medium text-gray-600">Time Slot</label>
-                            <Select
-                              value={bookingFilters.time}
-                              onValueChange={(value) => setBookingFilters((prev) => ({ ...prev, time: value }))}
-                            >
-                              <SelectTrigger className="w-full h-9 text-sm">
-                                <SelectValue placeholder="Select time" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="all">All Times</SelectItem>
-                                <SelectItem value="morning">Morning</SelectItem>
-                                <SelectItem value="afternoon">Afternoon</SelectItem>
-                                <SelectItem value="evening">Evening</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <div className="space-y-3">
+                            <label className="text-xs font-medium text-gray-600">
+                              Service Type
+                            </label>
+                            <div className="space-y-2">
+                              {[
+                                { value: "hair cut", label: "Hair Cut" },
+                                { value: "beard trim", label: "Beard Trim" },
+                                {
+                                  value: "full service",
+                                  label: "Full Service",
+                                },
+                                { value: "hair wash", label: "Hair Wash" },
+                                {
+                                  value: "color treatment",
+                                  label: "Color Treatment",
+                                },
+                              ].map((option) => (
+                                <div
+                                  key={option.value}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <Checkbox
+                                    id={`service-${option.value}`}
+                                    checked={bookingFilters.service.includes(
+                                      option.value
+                                    )}
+                                    onCheckedChange={(checked) =>
+                                      handleBookingFilterChange(
+                                        "service",
+                                        option.value,
+                                        checked as boolean
+                                      )
+                                    }
+                                  />
+                                  <label
+                                    htmlFor={`service-${option.value}`}
+                                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                  >
+                                    {option.label}
+                                  </label>
+                                </div>
+                              ))}
+                            </div>
                           </div>
 
                           <Button
@@ -354,8 +513,7 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-                
-              )} 
+              )}
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle className="text-xl">Recent Activity</CardTitle>
@@ -382,15 +540,25 @@ export default function DashboardPage() {
                                   <div
                                     className={`flex h-8 w-8 items-center justify-center rounded-full bg-${item.color}-100`}
                                   >
-                                    <item.icon className={`h-4 w-4 ${item.color}`} />
+                                    <item.icon
+                                      className={`h-4 w-4 ${item.color}`}
+                                    />
                                   </div>
                                   <div className="space-y-0.5">
-                                    <h3 className="font-medium text-sm">{item.title}</h3>
-                                    <p className="text-xs text-muted-foreground">{item.description}</p>
-                                    <p className="text-xs text-muted-foreground">{item.time}</p>
+                                    <h3 className="font-medium text-sm">
+                                      {item.title}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                      {item.description}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      {item.time}
+                                    </p>
                                   </div>
                                 </div>
-                                {item.badge && <Badge className="text-xs my-auto">New</Badge>}
+                                {item.badge && (
+                                  <Badge className="text-xs my-auto">New</Badge>
+                                )}
                               </div>
                             </CardContent>
                           </Card>
@@ -412,7 +580,10 @@ export default function DashboardPage() {
                         {filteredBookings.map((booking) => (
                           <Card
                             key={booking.id}
-                            className={`h-[80px] flex justify-center border-l-6 border-l-${booking.color.replace("text-", "")}`}
+                            className={`h-[80px] flex justify-center border-l-6 border-l-${booking.color.replace(
+                              "text-",
+                              ""
+                            )}`}
                           >
                             <CardContent className="p-3">
                               <div className="flex items-start justify-between">
@@ -420,16 +591,28 @@ export default function DashboardPage() {
                                   <div
                                     className={`flex h-8 w-8 items-center justify-center rounded-full ${booking.bgcolor}`}
                                   >
-                                    <Clock className={`h-4 w-4 ${booking.color}`} />
+                                    <Clock
+                                      className={`h-4 w-4 ${booking.color}`}
+                                    />
                                   </div>
                                   <div className="space-y-0.5">
-                                    <h3 className="font-medium text-sm">{booking.name}</h3>
-                                    <p className="text-xs text-muted-foreground">{booking.service}</p>
-                                    <p className="text-xs text-muted-foreground">Duration: {booking.duration}</p>
+                                    <h3 className="font-medium text-sm">
+                                      {booking.name}
+                                    </h3>
+                                    <p className="text-xs text-muted-foreground">
+                                      {booking.service}
+                                    </p>
+                                    <p className="text-xs text-muted-foreground">
+                                      Duration: {booking.duration}
+                                    </p>
                                   </div>
                                 </div>
                                 <Badge
-                                  variant={booking.status === "Confirmed" ? "secondary" : "outline"}
+                                  variant={
+                                    booking.status === "Confirmed"
+                                      ? "secondary"
+                                      : "outline"
+                                  }
                                   className="text-xs"
                                 >
                                   {booking.status}
@@ -446,11 +629,7 @@ export default function DashboardPage() {
             </Tabs>
           </div>
         </main>
-       </div>
-     </>
-  )
- }
-
-
-
-
+      </div>
+    </>
+  );
+}
