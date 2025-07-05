@@ -4,7 +4,7 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Calendar, Clock, User, DollarSign,ClockArrowDown ,  NotebookPen } from "lucide-react"
+import { Calendar, Clock, User,ClockArrowDown ,  NotebookPen } from "lucide-react"
 
 // Import separate components
 

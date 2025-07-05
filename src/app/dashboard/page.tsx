@@ -279,7 +279,7 @@ export default function DashboardPage() {
                     className="flex items-center gap-2"
                   >
                     <Calendar className="h-4 w-4" />
-                    Today's Bookings
+                    Today`&apos;`s Bookings
                     <Badge
                       variant="secondary"
                       className="ml-1 text-xs  bg-red-400 text-white "

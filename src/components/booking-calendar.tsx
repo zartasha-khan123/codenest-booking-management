@@ -108,7 +108,8 @@ export default function BookingCalendar() {
                     if (!day) return <div key={i}></div>;
                     const booked = calendarData[month]?.[day];
                     const bookedSlots = booked
-                      ? Object.entries(booked).filter(([_, v]) => v === false)
+                      ? Object.entries(booked).filter(([, v]) => v === false)
+
                       : [];
 
                     const isActive =
